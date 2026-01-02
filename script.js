@@ -6,6 +6,40 @@ let books = JSON.parse(localStorage.getItem('books')) || [
 let authors = JSON.parse(localStorage.getItem('authors')) || ["Albert Camus", "George Orwell"];
 let myChart = null;
 
+// Vérifier l'authentification
+if (!localStorage.getItem('bibliotheca_current_user')) {
+    window.location.href = 'login.html';
+}
+
+// Afficher le nom d'utilisateur
+const currentUser = JSON.parse(localStorage.getItem('bibliotheca_current_user'));
+if (currentUser && document.getElementById('currentUsername')) {
+    document.getElementById('currentUsername').textContent = currentUser.username;
+}
+
+// Fonction de déconnexion
+function logout() {
+    if (confirm('Êtes-vous sûr de vouloir vous déconnecter ?')) {
+        localStorage.removeItem('bibliotheca_current_user');
+        window.location.href = 'login.html';
+    }
+}
+
+// Fonction pour mettre à jour l'horloge
+function updateClock() {
+    const now = new Date();
+    const timeString = now.toLocaleTimeString('fr-FR');
+    const clockElement = document.getElementById('clock');
+    if (clockElement) {
+        clockElement.textContent = timeString;
+    }
+}
+
+// Démarrer l'horloge
+setInterval(updateClock, 1000);
+updateClock();
+
+
 
 document.querySelectorAll('[data-section]').forEach(link => {
     link.addEventListener('click', (e) => {
@@ -160,6 +194,9 @@ function render() {
         </tr>
     `).join('');
 
+    initDashboard();
+    render();
+    updateClock(); // Appel initial pour afficher l'heure immédiatement
 
     const authList = document.getElementById('authors-list');
     authList.innerHTML = authors.map(a => `
