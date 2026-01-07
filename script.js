@@ -5,6 +5,23 @@ let books = JSON.parse(localStorage.getItem('books')) || [
 ];
 let authors = JSON.parse(localStorage.getItem('authors')) || ["Albert Camus", "George Orwell"];
 let myChart = null;
+let filteredBooks = [...books]; 
+
+
+const searchInput = document.getElementById('searchInput');
+const sortSelect = document.getElementById('sortBook');
+
+if (searchInput) {
+    searchInput.addEventListener('input', () => {
+        filterAndSortBooks();
+    });
+}
+
+if (sortSelect) {
+    sortSelect.addEventListener('change', () => {
+        filterAndSortBooks();
+    });
+}
 
 // Vérifier l'authentification
 if (!localStorage.getItem('bibliotheca_current_user')) {
@@ -171,17 +188,48 @@ async function fetchExternalInfo() {
         console.error("Erreur API:", error);
     }
 }
+function filterAndSortBooks() {
+    const term = searchInput ? searchInput.value.toLowerCase().trim() : '';
+    const sortBy = sortSelect ? sortSelect.value : 'title';
 
+    // 1) FILTRER
+    filteredBooks = books.filter(b => {
+        if (term === '') return true; // si champ vide, on garde tout
 
-function saveAndRender() {
-    localStorage.setItem('books', JSON.stringify(books));
-    localStorage.setItem('authors', JSON.stringify(authors));
-    render();
+        if (sortBy === 'title') {
+            // Recherche uniquement sur le titre
+            return b.title.toLowerCase().includes(term);
+        }
+
+        if (sortBy === 'year') {
+            // Recherche uniquement sur l'année (numérique -> string)
+            return String(b.year).includes(term);
+        }
+
+        // Cas par défaut (au cas où) : même logique que tri par titre
+        return b.title.toLowerCase().includes(term);
+    });
+
+    // 2) TRIER
+    filteredBooks.sort((a, b) => {
+        if (sortBy === 'title') {
+            return a.title.localeCompare(b.title);   // "Trier par Titre"
+        }
+        if (sortBy === 'year') {
+            return b.year - a.year;                 // "Trier par Année"
+        }
+        return 0;
+    });
+
+    // 3) Réafficher le tableau
+    renderBooks();
 }
 
-function render() {
+function renderBooks() {
     const tbody = document.getElementById('booksTableBody');
-    tbody.innerHTML = books.map(b => `
+    if (!tbody) return;
+
+    tbody.innerHTML = filteredBooks.map(b => `
         <tr>
             <td>${b.title}</td>
             <td>${b.author}</td>
@@ -193,9 +241,21 @@ function render() {
             </td>
         </tr>
     `).join('');
+}
+
+function saveAndRender() {
+    localStorage.setItem('books', JSON.stringify(books));
+    localStorage.setItem('authors', JSON.stringify(authors));
+    render(); // render() va lui-même recalculer filteredBooks + afficher
+}
+
+function render() {
+    // à chaque render, on repart de tous les livres puis on applique le filtre
+    filteredBooks = [...books];
+    filterAndSortBooks(); // ça appelle déjà renderBooks() à la fin
 
     initDashboard();
-    render();
+  
     updateClock(); // Appel initial pour afficher l'heure immédiatement
 
     const authList = document.getElementById('authors-list');
