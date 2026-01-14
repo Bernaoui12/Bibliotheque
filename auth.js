@@ -1,6 +1,21 @@
 // Stockage des utilisateurs dans localStorage
 const USERS_KEY = 'bibliotheca_users';
 const CURRENT_USER_KEY = 'bibliotheca_current_user';
+const loginPage = document.getElementById('loginPage');
+const mainPage = document.getElementById('mainPage');
+
+function showLoginPage() {
+    if (loginPage) loginPage.classList.remove('d-none');
+    if (mainPage) mainPage.classList.add('d-none');
+}
+
+function showMainPage() {
+    if (loginPage) loginPage.classList.add('d-none');
+    if (mainPage) mainPage.classList.remove('d-none');
+}
+
+window.showLoginPage = showLoginPage;
+window.showMainPage = showMainPage;
 
 // Initialiser les utilisateurs par défaut si nécessaire
 function initUsers() {
@@ -53,23 +68,34 @@ function getCurrentUser() {
 // Déconnexion
 function logout() {
     localStorage.removeItem(CURRENT_USER_KEY);
-    window.location.href = 'login.html';
+    showLoginPage();
 }
 
 // Initialiser
 initUsers();
 
+function triggerAppInitialization() {
+    if (typeof window.initializeApp === 'function') {
+        window.initializeApp();
+    } else {
+        window.render?.();
+        window.initDashboard?.();
+    }
+}
+
 // Gestion du formulaire de connexion
 if (document.getElementById('loginFormElement')) {
     document.getElementById('loginFormElement').addEventListener('submit', (e) => {
         e.preventDefault();
+
         const username = document.getElementById('loginUsername').value;
         const password = document.getElementById('loginPassword').value;
         const errorDiv = document.getElementById('loginError');
         
         const result = loginUser(username, password);
         if (result.success) {
-            window.location.href = 'index.html';
+            showMainPage();
+            triggerAppInitialization();
         } else {
             errorDiv.textContent = result.message;
             errorDiv.classList.remove('d-none');
@@ -131,4 +157,11 @@ if (document.getElementById('showLogin')) {
         document.getElementById('registerForm').classList.add('d-none');
         document.getElementById('loginForm').classList.remove('d-none');
     });
+}
+
+// État initial de la page
+if (isAuthenticated()) {
+    showMainPage();
+} else {
+    showLoginPage();
 }

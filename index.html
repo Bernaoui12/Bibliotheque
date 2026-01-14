@@ -111,7 +111,7 @@
                     <span class="navbar-brand fw-bold">Welcome, <span id="currentUsername"></span></span>
                     <div class="ms-auto d-flex align-items-center gap-3">
                         <div class="text-muted" id="clock"></div>
-                        <button class="btn btn-outline-danger btn-sm" onclick="logout()">
+                        <button id="logoutBtn" class="btn btn-outline-danger btn-sm">
                             <i class="fas fa-sign-out-alt me-1"></i>Déconnexion
                         </button>
                     </div>
@@ -278,82 +278,34 @@
                         <div class="modal-footer">
                             <button type="submit" class="btn btn-success w-100">Ajouter</button>
                         </div>
-                    </form>
-                </div>
-            </div>
-        </div>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="auth.js"></script>
-    <script src="script.js"></script>
-    <script>
-        // ========== GESTION AUTHENTIFICATION MONOPAGE ==========
-        const USERS_KEY = 'bibliotheca_users';
-        const CURRENT_USER_KEY = 'bibliotheca_current_user';
+    <!-- MODAL AUTEUR -->
+    <div class="modal fade" id="authorModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content border-0 shadow">
+                <form id="authorForm">
+                    <div class="modal-header bg-success text-white">
+                        <h5 class="modal-title">Ajouter un Auteur</h5>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label class="form-label">Nom Complet</label>
+                            <input type="text" id="authorName" class="form-control" required>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="submit" class="btn btn-success w-100">Ajouter</button>
+                    </div>
+                </form>
+        </div>
+    </div>
+</div>
 
-        function showLoginPage() {
-            document.getElementById('loginPage').classList.remove('d-none');
-            document.getElementById('mainPage').classList.add('d-none');
-        }
-
-        function showMainPage() {
-            document.getElementById('loginPage').classList.add('d-none');
-            document.getElementById('mainPage').classList.remove('d-none');
-        }
-
-        // Modifier la fonction logout pour utiliser showLoginPage au lieu de redirection
-        const originalLogout = window.logout;
-        window.logout = function() {
-            if (confirm('Êtes-vous sûr de vouloir vous déconnecter ?')) {
-                localStorage.removeItem(CURRENT_USER_KEY);
-                showLoginPage();
-            }
-        };
-
-        // Modifier auth.js pour rediriger vers la page principale au lieu de index.html
-        if (document.getElementById('loginFormElement')) {
-            document.getElementById('loginFormElement').addEventListener('submit', (e) => {
-                e.preventDefault();
-                const username = document.getElementById('loginUsername').value;
-                const password = document.getElementById('loginPassword').value;
-                const errorDiv = document.getElementById('loginError');
-                
-                // Utiliser les fonctions de auth.js
-                const users = JSON.parse(localStorage.getItem(USERS_KEY)) || [];
-                const user = users.find(u => u.username === username && u.password === password);
-                
-                if (user) {
-                    localStorage.setItem(CURRENT_USER_KEY, JSON.stringify({ username: user.username }));
-                    showMainPage();
-                    // Réinitialiser l'app après connexion
-                    if (typeof initApp === 'function') {
-                        initApp();
-                    } else {
-                        // Attendre que script.js soit chargé
-                        setTimeout(() => {
-                            if (typeof render === 'function') {
-                                render();
-                            }
-                            if (typeof initDashboard === 'function') {
-                                initDashboard();
-                            }
-                        }, 100);
-                    }
-                } else {
-                    errorDiv.textContent = 'Nom d\'utilisateur ou mot de passe incorrect';
-                    errorDiv.classList.remove('d-none');
-                }
-            });
-        }
-
-        // Vérifier l'authentification au chargement
-        if (localStorage.getItem(CURRENT_USER_KEY)) {
-            showMainPage();
-        } else {
-            showLoginPage();
-        }
-    </script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="auth.js"></script>
+<script src="script.js"></script>
 </body>
 </html>

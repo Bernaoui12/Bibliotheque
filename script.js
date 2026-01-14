@@ -1,4 +1,3 @@
-
 let books = JSON.parse(localStorage.getItem('books')) || [
     { id: 1, title: "L'Étranger", author: "Albert Camus", year: 1942, genre: "Roman" },
     { id: 2, title: "1984", author: "George Orwell", year: 1949, genre: "Science-Fiction" }
@@ -28,18 +27,35 @@ if (!localStorage.getItem('bibliotheca_current_user')) {
     window.location.href = 'login.html';
 }
 
-// Afficher le nom d'utilisateur
-const currentUser = JSON.parse(localStorage.getItem('bibliotheca_current_user'));
-if (currentUser && document.getElementById('currentUsername')) {
-    document.getElementById('currentUsername').textContent = currentUser.username;
+function getCurrentUser() {
+    const stored = localStorage.getItem('bibliotheca_current_user');
+    return stored ? JSON.parse(stored) : null;
 }
+
+function updateCurrentUsername() {
+    const currentUser = getCurrentUser();
+    const usernameElement = document.getElementById('currentUsername');
+    if (usernameElement) {
+        usernameElement.textContent = currentUser?.username ?? '';
+    }
+}
+updateCurrentUsername();
 
 // Fonction de déconnexion
 function logout() {
     if (confirm('Êtes-vous sûr de vouloir vous déconnecter ?')) {
         localStorage.removeItem('bibliotheca_current_user');
-        window.location.href = 'login.html';
+        window.showLoginPage?.();
+        updateCurrentUsername();
     }
+}
+
+const logoutBtn = document.getElementById('logoutBtn');
+if (logoutBtn) {
+    logoutBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        logout();
+    });
 }
 
 // Fonction pour mettre à jour l'horloge
@@ -76,30 +92,33 @@ document.querySelectorAll('[data-section]').forEach(link => {
 
 
 const bookForm = document.getElementById('bookForm');
-const bookModal = new bootstrap.Modal(document.getElementById('bookModal'));
+const bookModalElement = document.getElementById('bookModal');
+const bookModal = bookModalElement ? new bootstrap.Modal(bookModalElement) : null;
 
-bookForm.addEventListener('submit', (e) => {
-    e.preventDefault();
-    const id = document.getElementById('bookId').value;
-    const newBook = {
-        id: id ? parseInt(id) : Date.now(),
-        title: document.getElementById('bookTitle').value,
-        author: document.getElementById('bookAuthor').value,
-        year: parseInt(document.getElementById('bookYear').value),
-        genre: document.getElementById('bookGenre').value
-    };
+if (bookForm && bookModal) {
+    bookForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const id = document.getElementById('bookId').value;
+        const newBook = {
+            id: id ? parseInt(id) : Date.now(),
+            title: document.getElementById('bookTitle').value,
+            author: document.getElementById('bookAuthor').value,
+            year: parseInt(document.getElementById('bookYear').value),
+            genre: document.getElementById('bookGenre').value
+        };
 
-    if (id) {
-        const index = books.findIndex(b => b.id == id);
-        books[index] = newBook;
-    } else {
-        books.push(newBook);
-    }
+        if (id) {
+            const index = books.findIndex(b => b.id == id);
+            books[index] = newBook;
+        } else {
+            books.push(newBook);
+        }
 
-    saveAndRender();
-    bookModal.hide();
-    bookForm.reset();
-});
+        saveAndRender();
+        bookModal.hide();
+        bookForm.reset();
+    });
+}
 
 function deleteBook(id) {
     if (confirm('Supprimer ce livre ?')) {
@@ -115,21 +134,24 @@ function editBook(id) {
     document.getElementById('bookAuthor').value = b.author;
     document.getElementById('bookYear').value = b.year;
     document.getElementById('bookGenre').value = b.genre;
-    bookModal.show();
+    bookModal?.show();
 }
 
 
 const authorForm = document.getElementById('authorForm');
-authorForm.addEventListener('submit', (e) => {
-    e.preventDefault();
-    const name = document.getElementById('authorName').value;
-    if(!authors.includes(name)) {
-        authors.push(name);
-        saveAndRender();
-        bootstrap.Modal.getInstance(document.getElementById('authorModal')).hide();
-        authorForm.reset();
-    }
-});
+if (authorForm) {
+    authorForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const name = document.getElementById('authorName').value;
+        if(!authors.includes(name)) {
+            authors.push(name);
+            saveAndRender();
+            const modalInstance = bootstrap.Modal.getInstance(document.getElementById('authorModal'));
+            modalInstance?.hide();
+            authorForm.reset();
+        }
+    });
+}
 
 function deleteAuthor(name) {
     authors = authors.filter(a => a !== name);
@@ -143,9 +165,15 @@ function initDashboard() {
     fetchExternalInfo();
 }
 
+function getAllAuthors() {
+    const manualAuthors = authors.map(a => a?.trim()).filter(Boolean);
+    const bookAuthors = books.map(b => b.author?.trim()).filter(Boolean);
+    return Array.from(new Set([...manualAuthors, ...bookAuthors]));
+}
+
 function updateKPIs() {
     document.getElementById('kpi-books').innerText = books.length;
-    document.getElementById('kpi-authors').innerText = authors.length;
+    document.getElementById('kpi-authors').innerText = getAllAuthors().length;
     if(books.length > 0) {
         const last = books[books.length - 1];
         document.getElementById('kpi-last-date').innerText = last.title;
@@ -254,25 +282,26 @@ function render() {
     filteredBooks = [...books];
     filterAndSortBooks(); // ça appelle déjà renderBooks() à la fin
 
+    updateCurrentUsername();
     initDashboard();
   
     updateClock(); // Appel initial pour afficher l'heure immédiatement
 
     const authList = document.getElementById('authors-list');
-    authList.innerHTML = authors.map(a => `
-        <div class="col-md-4 mb-3">
-            <div class="card p-3 d-flex flex-row justify-content-between align-items-center border-0 shadow-sm">
-                <span><i class="fas fa-user me-2 text-primary"></i>${a}</span>
-                <button class="btn btn-sm text-danger" onclick="deleteAuthor('${a}')"><i class="fas fa-times"></i></button>
+    if (authList) {
+        const combinedAuthors = getAllAuthors();
+        authList.innerHTML = combinedAuthors.map(a => `
+            <div class="col-md-4 mb-3">
+                <div class="card p-3 d-flex flex-row justify-content-between align-items-center border-0 shadow-sm">
+                    <span><i class="fas fa-user me-2 text-primary"></i>${a}</span>
+                    <button class="btn btn-sm text-danger" onclick="deleteAuthor('${a}')"><i class="fas fa-times"></i></button>
+                </div>
             </div>
-        </div>
-    `).join('');
+        `).join('');
+    }
 
     updateKPIs();
 }
-
-
-
 
 initDashboard();
 render();
