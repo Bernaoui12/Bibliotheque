@@ -231,6 +231,10 @@ const bookForm = document.getElementById('bookForm');
 const bookModalElement = document.getElementById('bookModal');
 const bookModal = bookModalElement ? new bootstrap.Modal(bookModalElement) : null;
 
+if (bookModalElement) {
+    bookModalElement.addEventListener('show.bs.modal', populateAuthorSelect);
+}
+
 if (bookForm && bookModal) {
     bookForm.addEventListener('submit', (e) => {
         e.preventDefault();
@@ -282,6 +286,7 @@ if (authorForm) {
         if(!authors.includes(name)) {
             authors.push(name);
             saveAndRender();
+            populateAuthorSelect();
             const modalInstance = bootstrap.Modal.getInstance(document.getElementById('authorModal'));
             modalInstance?.hide();
             authorForm.reset();
@@ -291,6 +296,7 @@ if (authorForm) {
 
 function deleteAuthor(name) {
     authors = authors.filter(a => a !== name);
+    books = books.map(b => b.author === name ? { ...b, author: '' } : b);
     saveAndRender();
 }
 
@@ -306,6 +312,29 @@ function getAllAuthors() {
     const bookAuthors = books.map(b => b.author?.trim()).filter(Boolean);
     return Array.from(new Set([...manualAuthors, ...bookAuthors]));
 }
+
+function populateAuthorSelect() {
+    const select = document.getElementById('bookAuthor');
+    if (!select) return;
+    select.innerHTML = '<option value="">Sélectionner un auteur</option>';
+    const allAuthors = getAllAuthors();
+    allAuthors.forEach(author => {
+        const option = document.createElement('option');
+        option.value = author;
+        option.textContent = author;
+        select.appendChild(option);
+    });
+}
+
+function openAuthorM3odalFromBook() {
+    const authorModalElement = document.getElementById('authorModal');
+    if (authorModalElement) {
+        const modal = new bootstrap.Modal(authorModalElement);
+        modal.show();
+    }
+}
+
+window.openAuthorModalFromBook = openAuthorModalFromBook;
 
 function updateKPIs() {
     document.getElementById('kpi-books').innerText = books.length;
@@ -430,10 +459,16 @@ function render() {
             <div class="col-md-4 mb-3">
                 <div class="card p-3 d-flex flex-row justify-content-between align-items-center border-0 shadow-sm">
                     <span><i class="fas fa-user me-2 text-primary"></i>${a}</span>
-                    <button class="btn btn-sm text-danger" onclick="deleteAuthor('${a}')"><i class="fas fa-times"></i></button>
+                    <button class="btn btn-sm text-danger delete-author-btn" data-author="${a}"><i class="fas fa-times"></i></button>
                 </div>
             </div>
         `).join('');
+        authList.addEventListener('click', (e) => {
+            if (e.target.classList.contains('delete-author-btn')) {
+                const author = e.target.getAttribute('data-author');
+                deleteAuthor(author);
+            }
+        });
     }
 
     updateKPIs();

@@ -234,7 +234,10 @@
                             </div>
                             <div class="mb-3">
                                 <label class="form-label">Auteur</label>
-                                <input type="text" id="bookAuthor" class="form-control" required>
+                                <select id="bookAuthor" class="form-select" required>
+                                    <option value="">Sélectionner un auteur</option>
+                                </select>
+                                <button type="button" class="btn btn-sm btn-outline-secondary mt-1" onclick="openAuthorModalFromBook()">Ajouter un nouvel auteur</button>
                             </div>
                             <div class="row">
                                 <div class="col-6 mb-3">
@@ -278,26 +281,9 @@
                         <div class="modal-footer">
                             <button type="submit" class="btn btn-success w-100">Ajouter</button>
                         </div>
-    </div>
-
-    <!-- MODAL AUTEUR -->
-    <div class="modal fade" id="authorModal" tabindex="-1">
-        <div class="modal-dialog">
-            <div class="modal-content border-0 shadow">
-                <form id="authorForm">
-                    <div class="modal-header bg-success text-white">
-                        <h5 class="modal-title">Ajouter un Auteur</h5>
-                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-                    </div>
-                    <div class="modal-body">
-                        <div class="mb-3">
-                            <label class="form-label">Nom Complet</label>
-                            <input type="text" id="authorName" class="form-control" required>
-                        </div>
-                    </div>
-                    <div class="modal-footer">
-                        <button type="submit" class="btn btn-success w-100">Ajouter</button>
-                    </div>
+                    </form>
+                </div>
+            </div>
         </div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
