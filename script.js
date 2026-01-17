@@ -1,3 +1,150 @@
+const USERS_KEY = 'bibliotheca_users';
+const CURRENT_USER_KEY = 'bibliotheca_current_user';
+
+const loginPage = document.getElementById('loginPage');
+const mainPage = document.getElementById('mainPage');
+
+function showLoginPage() {
+    if (loginPage) loginPage.classList.remove('d-none');
+    if (mainPage) mainPage.classList.add('d-none');
+}
+
+function showMainPage() {
+    if (loginPage) loginPage.classList.add('d-none');
+    if (mainPage) mainPage.classList.remove('d-none');
+}
+
+window.showLoginPage = showLoginPage;
+window.showMainPage = showMainPage;
+
+function initUsers() {
+    if (!localStorage.getItem(USERS_KEY)) {
+        const defaultUsers = [{ username: 'admin', password: 'admin123' }];
+        localStorage.setItem(USERS_KEY, JSON.stringify(defaultUsers));
+    }
+}
+
+function getUsers() {
+    return JSON.parse(localStorage.getItem(USERS_KEY)) || [];
+}
+
+function registerUser(username, password) {
+    const users = getUsers();
+    if (users.find(u => u.username === username)) {
+        return { success: false, message: "Ce nom d'utilisateur existe déjà" };
+    }
+    users.push({ username, password });
+    localStorage.setItem(USERS_KEY, JSON.stringify(users));
+    return { success: true, message: 'Inscription réussie !' };
+}
+
+
+function loginUser(username, password) {
+    const users = getUsers();
+    const user = users.find(u => u.username === username && u.password === password);
+    if (user) {
+        localStorage.setItem(CURRENT_USER_KEY, JSON.stringify({ username: user.username }));
+        return { success: true };
+    }
+    return { success: false, message: "Nom d'utilisateur ou mot de passe incorrect" };
+}
+
+function isAuthenticated() {
+    return localStorage.getItem(CURRENT_USER_KEY) !== null;
+}
+
+function getCurrentUser() {
+    const stored = localStorage.getItem(CURRENT_USER_KEY);
+    return stored ? JSON.parse(stored) : null;
+}
+
+initUsers();
+
+const loginFormElement = document.getElementById('loginFormElement');
+if (loginFormElement) {
+    loginFormElement.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const username = document.getElementById('loginUsername').value;
+        const password = document.getElementById('loginPassword').value;
+        const errorDiv = document.getElementById('loginError');
+
+        if (errorDiv) {
+            errorDiv.classList.add('d-none');
+        }
+
+        const result = loginUser(username, password);
+        if (result.success) {
+            initializeApp();
+            loginFormElement.reset();
+        } else if (errorDiv) {
+            errorDiv.textContent = result.message;
+            errorDiv.classList.remove('d-none');
+        }
+    });
+}
+
+const registerFormElement = document.getElementById('registerFormElement');
+if (registerFormElement) {
+    registerFormElement.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const username = document.getElementById('registerUsername').value;
+        const password = document.getElementById('registerPassword').value;
+        const passwordConfirm = document.getElementById('registerPasswordConfirm').value;
+        const errorDiv = document.getElementById('registerError');
+        const successDiv = document.getElementById('registerSuccess');
+
+        if (errorDiv) errorDiv.classList.add('d-none');
+        if (successDiv) successDiv.classList.add('d-none');
+
+        if (password !== passwordConfirm) {
+            if (errorDiv) {
+                errorDiv.textContent = 'Les mots de passe ne correspondent pas';
+                errorDiv.classList.remove('d-none');
+            }
+            return;
+        }
+
+        if (password.length < 6) {
+            if (errorDiv) {
+                errorDiv.textContent = 'Le mot de passe doit contenir au moins 6 caractères';
+                errorDiv.classList.remove('d-none');
+            }
+            return;
+        }
+
+        const result = registerUser(username, password);
+        if (result.success) {
+            if (successDiv) {
+                successDiv.textContent = result.message;
+                successDiv.classList.remove('d-none');
+            }
+            setTimeout(() => document.getElementById('showLogin')?.click(), 1500);
+            registerFormElement.reset();
+        } else if (errorDiv) {
+            errorDiv.textContent = result.message;
+            errorDiv.classList.remove('d-none');
+        }
+    });
+}
+
+const showRegisterLink = document.getElementById('showRegister');
+if (showRegisterLink) {
+    showRegisterLink.addEventListener('click', (e) => {
+        e.preventDefault();
+        document.getElementById('loginForm')?.classList.add('d-none');
+        document.getElementById('registerForm')?.classList.remove('d-none');
+    });
+}
+
+const showLoginLink = document.getElementById('showLogin');
+if (showLoginLink) {
+    showLoginLink.addEventListener('click', (e) => {
+        e.preventDefault();
+        document.getElementById('registerForm')?.classList.add('d-none');
+        document.getElementById('loginForm')?.classList.remove('d-none');
+    });
+}
+
 let books = JSON.parse(localStorage.getItem('books')) || [
     { id: 1, title: "L'Étranger", author: "Albert Camus", year: 1942, genre: "Roman" },
     { id: 2, title: "1984", author: "George Orwell", year: 1949, genre: "Science-Fiction" }
@@ -22,16 +169,6 @@ if (sortSelect) {
     });
 }
 
-// Vérifier l'authentification
-if (!localStorage.getItem('bibliotheca_current_user')) {
-    window.location.href = 'login.html';
-}
-
-function getCurrentUser() {
-    const stored = localStorage.getItem('bibliotheca_current_user');
-    return stored ? JSON.parse(stored) : null;
-}
-
 function updateCurrentUsername() {
     const currentUser = getCurrentUser();
     const usernameElement = document.getElementById('currentUsername');
@@ -44,9 +181,8 @@ updateCurrentUsername();
 // Fonction de déconnexion
 function logout() {
     if (confirm('Êtes-vous sûr de vouloir vous déconnecter ?')) {
-        localStorage.removeItem('bibliotheca_current_user');
-        window.showLoginPage?.();
-        updateCurrentUsername();
+        localStorage.removeItem(CURRENT_USER_KEY);
+        initializeApp();
     }
 }
 
@@ -303,5 +439,15 @@ function render() {
     updateKPIs();
 }
 
-initDashboard();
-render();
+function initializeApp() {
+    if (isAuthenticated()) {
+        showMainPage();
+        render();
+    } else {
+        showLoginPage();
+        updateCurrentUsername();
+    }
+}
+
+window.initializeApp = initializeApp;
+initializeApp();
